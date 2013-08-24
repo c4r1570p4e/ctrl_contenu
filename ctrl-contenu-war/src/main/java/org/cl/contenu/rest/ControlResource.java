@@ -1,19 +1,24 @@
 package org.cl.contenu.rest;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.cl.contenu.domain.Url;
+import org.cl.contenu.domain.UrlsRequest;
 import org.joda.time.DateTime;
 import org.joda.time.Years;
 import org.joda.time.format.DateTimeFormat;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
-@RequestMapping("/url")
+@RequestMapping(value = "/url", produces = "application/json")
 public class ControlResource {
 
 	@RequestMapping(method = RequestMethod.POST)
@@ -37,6 +42,35 @@ public class ControlResource {
 			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 			return;
 		}
+
+	}
+
+	@RequestMapping(value = "/multi", method = RequestMethod.POST, consumes = "application/json")
+	@ResponseBody
+	public List<Url> postControlerUrls(@RequestBody UrlsRequest urlsRequest, HttpServletResponse response)
+			throws IOException {
+
+		if (urlsRequest == null || urlsRequest.getUrls() == null) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, IConstantesCodeErreur.URLS_REQUEST_ABSENTE);
+			return null;
+		}
+
+		if (urlsRequest.getDateNaissance() == null) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, IConstantesCodeErreur.ERREUR_FORMAT_DATE_NAISSANCE);
+			return null;
+		}
+
+		DateTime dDateNaissance = new DateTime(urlsRequest.getDateNaissance().getTime());
+
+		List<Url> urls = new ArrayList<>();
+
+		for (Url u : urlsRequest.getUrls()) {
+			if (!isUrlBloquee(u, dDateNaissance)) {
+				urls.add(u);
+			}
+		}
+
+		return urls;
 
 	}
 

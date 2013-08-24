@@ -1,20 +1,32 @@
 package org.cl.contenu.rest;
 
+import static org.cl.contenu.rest.IConstantesCodeErreur.ERREUR_FORMAT_DATE_NAISSANCE;
+import static org.cl.contenu.rest.IConstantesCodeErreur.URLS_REQUEST_ABSENTE;
+import static org.cl.contenu.rest.IConstantesCodeErreur.URL_ABSENTE;
 import static org.cl.contenu.rest.IConstantesTest.BAD_FORMAT_DATE;
-import static org.cl.contenu.rest.IConstantesTest.GOOGLE_URL;
 import static org.cl.contenu.rest.IConstantesTest.GOOD_DATE;
+import static org.cl.contenu.rest.IConstantesTest.GOOGLE_URL;
 import static org.cl.contenu.rest.IConstantesTest.URL_13_ANS;
-import static org.cl.contenu.rest.IConstantesTest.URL_9_ANS;
 import static org.cl.contenu.rest.IConstantesTest.URL_15_ANS;
 import static org.cl.contenu.rest.IConstantesTest.URL_17_ANS;
 import static org.cl.contenu.rest.IConstantesTest.URL_39_ANS;
-
-import static org.cl.contenu.rest.IConstantesCodeErreur.ERREUR_FORMAT_DATE_NAISSANCE;
-import static org.cl.contenu.rest.IConstantesCodeErreur.URL_ABSENTE;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.cl.contenu.rest.IConstantesTest.URL_9_ANS;
 import static org.fest.assertions.Assertions.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.cl.contenu.domain.Url;
+import org.cl.contenu.domain.UrlsRequest;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,53 +40,69 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import com.google.common.collect.Lists;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "file:src/test/resources/test-context.xml" })
 @WebAppConfiguration
 public class ControlResourceTest {
+
+	private static String SLASH_URL = "/url";
+	private static String SLASH_URL_SLASH_MULTI = "/url/multi";
+
+	private static String PARAM_URL = "url";
+	private static String PARAM_DATE_NAISSANCE = "dateNaissance";
 
 	@Autowired
 	private WebApplicationContext ctx;
 
 	private MockMvc mockMvc;
 
+	private ObjectMapper objectMapper = new ObjectMapper();
+
 	@Before
 	public void setUp() {
-		this.mockMvc = MockMvcBuilders.webAppContextSetup(ctx).build();
+		if (this.mockMvc == null) {
+			this.mockMvc = MockMvcBuilders.webAppContextSetup(ctx).build();
+		}
 	}
+
+	/* test sur une URL */
 
 	@Test
 	public void doitObtenir400SiMauvaisFormatDateNaissance() throws Exception {
 		mockMvc.perform(
-				post("/url").param("url", GOOGLE_URL).param("dateNaissance", BAD_FORMAT_DATE)
+				post(SLASH_URL).param(PARAM_URL, GOOGLE_URL).param(PARAM_DATE_NAISSANCE, BAD_FORMAT_DATE)
 						.accept(MediaType.APPLICATION_JSON)).andExpect(status().isBadRequest())
 				.andExpect(status().reason(ERREUR_FORMAT_DATE_NAISSANCE));
 	}
 
 	@Test
 	public void doitObtenir400SiPasDUrl() throws Exception {
-		mockMvc.perform(post("/url").param("dateNaissance", GOOD_DATE).accept(MediaType.APPLICATION_JSON))
+		mockMvc.perform(post(SLASH_URL).param(PARAM_DATE_NAISSANCE, GOOD_DATE).accept(MediaType.APPLICATION_JSON))
 				.andExpect(status().isBadRequest()).andExpect(status().reason(URL_ABSENTE));
 	}
 
 	@Test
 	public void doitObtenir400SiUrlVide() throws Exception {
 		mockMvc.perform(
-				post("/url").param("url", "").param("dateNaissance", GOOD_DATE).accept(MediaType.APPLICATION_JSON))
-				.andExpect(status().isBadRequest()).andExpect(status().reason(URL_ABSENTE));
+				post(SLASH_URL).param(PARAM_URL, "").param(PARAM_DATE_NAISSANCE, GOOD_DATE)
+						.accept(MediaType.APPLICATION_JSON)).andExpect(status().isBadRequest())
+				.andExpect(status().reason(URL_ABSENTE));
 	}
 
 	@Test
 	public void doitObtenir400SiUrlBlanc() throws Exception {
 		mockMvc.perform(
-				post("/url").param("url", "     ").param("dateNaissance", GOOD_DATE).accept(MediaType.APPLICATION_JSON))
-				.andExpect(status().isBadRequest()).andExpect(status().reason(URL_ABSENTE));
+				post(SLASH_URL).param(PARAM_URL, "     ").param(PARAM_DATE_NAISSANCE, GOOD_DATE)
+						.accept(MediaType.APPLICATION_JSON)).andExpect(status().isBadRequest())
+				.andExpect(status().reason(URL_ABSENTE));
 	}
 
 	@Test
 	public void doitObtenirOk() throws Exception {
 		mockMvc.perform(
-				post("/url").param("url", GOOGLE_URL).param("dateNaissance", GOOD_DATE)
+				post(SLASH_URL).param(PARAM_URL, GOOGLE_URL).param(PARAM_DATE_NAISSANCE, GOOD_DATE)
 						.accept(MediaType.APPLICATION_JSON)).andExpect(status().isOk());
 	}
 
@@ -103,12 +131,112 @@ public class ControlResourceTest {
 
 		if (mustPass) {
 			mockMvc.perform(
-					post("/url").param("url", url).param("dateNaissance", datenaissance.toString("dd-MM-yyyy"))
+					post(SLASH_URL).param(PARAM_URL, url)
+							.param(PARAM_DATE_NAISSANCE, datenaissance.toString("dd-MM-yyyy"))
 							.accept(MediaType.APPLICATION_JSON)).andExpect(status().isOk());
 		} else {
 			mockMvc.perform(
-					post("/url").param("url", url).param("dateNaissance", datenaissance.toString("dd-MM-yyyy"))
+					post(SLASH_URL).param(PARAM_URL, url)
+							.param(PARAM_DATE_NAISSANCE, datenaissance.toString("dd-MM-yyyy"))
 							.accept(MediaType.APPLICATION_JSON)).andExpect(status().isForbidden());
 		}
 	}
+
+	/* test sur plusieurs URL */
+
+	private String getJSON(UrlsRequest urlsRequest) throws JsonGenerationException, JsonMappingException, IOException {
+		return objectMapper.writeValueAsString(urlsRequest);
+	}
+
+	@Test
+	public void doitObtenir400SiPasDeContenu() throws Exception {
+
+		String content = getJSON(null);
+
+		mockMvc.perform(
+				post(SLASH_URL_SLASH_MULTI).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
+						.content(content)).andExpect(status().isBadRequest())
+				.andExpect(status().reason(URLS_REQUEST_ABSENTE));
+	}
+
+	private Date getDatenaissance4Age(int age) {
+		return DateTime.now().minusYears(age).toDate();
+	}
+
+	@Test
+	public void doitObtenir400SiPasDURLs() throws Exception {
+
+		UrlsRequest urlsRequest = new UrlsRequest();
+		urlsRequest.setUrls(null);
+		urlsRequest.setDateNaissance(getDatenaissance4Age(25));
+
+		String content = getJSON(urlsRequest);
+
+		mockMvc.perform(
+				post(SLASH_URL_SLASH_MULTI).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
+						.content(content)).andExpect(status().isBadRequest())
+				.andExpect(status().reason(URLS_REQUEST_ABSENTE));
+	}
+
+	@Test
+	public void doitObtenir400SiPasDateNaissance() throws Exception {
+
+		UrlsRequest urlsRequest = new UrlsRequest();
+		urlsRequest.getUrls().add(new Url(GOOGLE_URL));
+		urlsRequest.setDateNaissance(null);
+
+		String content = getJSON(urlsRequest);
+
+		mockMvc.perform(
+				post(SLASH_URL_SLASH_MULTI).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
+						.content(content)).andExpect(status().isBadRequest())
+				.andExpect(status().reason(ERREUR_FORMAT_DATE_NAISSANCE));
+	}
+
+	private void doTest4Multi(int age, List<String> urlsAttendues) throws Exception {
+
+		Date dateNaissance = getDatenaissance4Age(age);
+
+		UrlsRequest urlsRequest = new UrlsRequest();
+		urlsRequest.setDateNaissance(dateNaissance);
+
+		urlsRequest.getUrls().add(new Url(URL_13_ANS));
+		urlsRequest.getUrls().add(new Url(URL_15_ANS));
+		urlsRequest.getUrls().add(new Url(URL_39_ANS));
+		urlsRequest.getUrls().add(new Url(URL_17_ANS));
+		urlsRequest.getUrls().add(new Url(URL_9_ANS));
+
+		String content = getJSON(urlsRequest);
+
+		// print().handle(
+		mockMvc.perform(
+				post(SLASH_URL_SLASH_MULTI).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
+						.content(content)).andExpect(status().isOk())
+				.andExpect(jsonPath("$..url", equalTo(urlsAttendues)));
+		// .andReturn());
+
+	}
+
+	@Test
+	public void doitObtenirUrlsMulti() throws Exception {
+
+		List<String> urls;
+
+		urls = new ArrayList<String>();
+		doTest4Multi(5, urls);
+
+		urls = Lists.newArrayList(URL_9_ANS);
+		doTest4Multi(13, urls);
+
+		urls = Lists.newArrayList(URL_13_ANS, URL_9_ANS);
+		doTest4Multi(15, urls);
+
+		urls = Lists.newArrayList(URL_13_ANS, URL_15_ANS, URL_9_ANS);
+		doTest4Multi(17, urls);
+
+		urls = Lists.newArrayList(URL_13_ANS, URL_15_ANS, URL_39_ANS, URL_17_ANS, URL_9_ANS);
+		doTest4Multi(19, urls);
+
+	}
+
 }
