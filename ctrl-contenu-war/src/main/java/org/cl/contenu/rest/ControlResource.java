@@ -33,9 +33,18 @@ public class ControlResource {
 			return;
 		}
 
-		Years years = Years.yearsBetween(dDateNaissance, DateTime.now());
-		int age = years.getYears();
+		if (isUrlBloquee(url, dDateNaissance)) {
+			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+			return;
+		}
 
+	}
+
+	private boolean isUrlBloquee(Url url, DateTime dateNaissance) {
+		return (getAge(dateNaissance) < getAgeMinUrl(url));
+	}
+
+	private int getAgeMinUrl(Url url) {
 		int ageMinUrl = Math.abs(url.getUrl().hashCode() % 100);
 
 		int ageMin = 12;
@@ -50,10 +59,11 @@ public class ControlResource {
 			ageMin = 18;
 		}
 
-		if (age < ageMin) {
-			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-			return;
-		}
+		return ageMin;
+	}
 
+	private int getAge(DateTime dateNaissance) {
+		Years years = Years.yearsBetween(dateNaissance, DateTime.now());
+		return years.getYears();
 	}
 }
