@@ -81,9 +81,11 @@ public class ControlResource {
 	private int getAgeMinUrl(Url url) {
 		int ageMinUrl = Math.abs(url.getUrl().hashCode() % 100);
 
-		int ageMin = 12;
+		int ageMin = 0;
 
-		if (ageMinUrl <= 12) {
+		if (ageMinUrl <= 6) {
+			ageMin = 0;
+		} else if (ageMinUrl <= 12) {
 			ageMin = 12;
 		} else if (ageMinUrl <= 14) {
 			ageMin = 14;
