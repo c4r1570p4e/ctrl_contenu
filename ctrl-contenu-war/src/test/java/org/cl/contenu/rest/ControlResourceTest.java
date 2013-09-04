@@ -13,6 +13,7 @@ import static org.cl.contenu.rest.IConstantesTest.URL_39_ANS;
 import static org.cl.contenu.rest.IConstantesTest.URL_9_ANS;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -72,21 +73,21 @@ public class ControlResourceTest {
 	@Test
 	public void doitObtenir400SiMauvaisFormatDateNaissance() throws Exception {
 		mockMvc.perform(
-				post(SLASH_URL).param(PARAM_URL, GOOGLE_URL).param(PARAM_DATE_NAISSANCE, BAD_FORMAT_DATE)
+				get(SLASH_URL).param(PARAM_URL, GOOGLE_URL).param(PARAM_DATE_NAISSANCE, BAD_FORMAT_DATE)
 						.accept(MediaType.APPLICATION_JSON)).andExpect(status().isBadRequest())
 				.andExpect(status().reason(ERREUR_FORMAT_DATE_NAISSANCE));
 	}
 
 	@Test
 	public void doitObtenir400SiPasDUrl() throws Exception {
-		mockMvc.perform(post(SLASH_URL).param(PARAM_DATE_NAISSANCE, GOOD_DATE).accept(MediaType.APPLICATION_JSON))
+		mockMvc.perform(get(SLASH_URL).param(PARAM_DATE_NAISSANCE, GOOD_DATE).accept(MediaType.APPLICATION_JSON))
 				.andExpect(status().isBadRequest()).andExpect(status().reason(URL_ABSENTE));
 	}
 
 	@Test
 	public void doitObtenir400SiUrlVide() throws Exception {
 		mockMvc.perform(
-				post(SLASH_URL).param(PARAM_URL, "").param(PARAM_DATE_NAISSANCE, GOOD_DATE)
+				get(SLASH_URL).param(PARAM_URL, "").param(PARAM_DATE_NAISSANCE, GOOD_DATE)
 						.accept(MediaType.APPLICATION_JSON)).andExpect(status().isBadRequest())
 				.andExpect(status().reason(URL_ABSENTE));
 	}
@@ -94,7 +95,7 @@ public class ControlResourceTest {
 	@Test
 	public void doitObtenir400SiUrlBlanc() throws Exception {
 		mockMvc.perform(
-				post(SLASH_URL).param(PARAM_URL, "     ").param(PARAM_DATE_NAISSANCE, GOOD_DATE)
+				get(SLASH_URL).param(PARAM_URL, "     ").param(PARAM_DATE_NAISSANCE, GOOD_DATE)
 						.accept(MediaType.APPLICATION_JSON)).andExpect(status().isBadRequest())
 				.andExpect(status().reason(URL_ABSENTE));
 	}
@@ -102,7 +103,7 @@ public class ControlResourceTest {
 	@Test
 	public void doitObtenirOk() throws Exception {
 		mockMvc.perform(
-				post(SLASH_URL).param(PARAM_URL, GOOGLE_URL).param(PARAM_DATE_NAISSANCE, GOOD_DATE)
+				get(SLASH_URL).param(PARAM_URL, GOOGLE_URL).param(PARAM_DATE_NAISSANCE, GOOD_DATE)
 						.accept(MediaType.APPLICATION_JSON)).andExpect(status().isOk());
 	}
 
@@ -131,12 +132,12 @@ public class ControlResourceTest {
 
 		if (mustPass) {
 			mockMvc.perform(
-					post(SLASH_URL).param(PARAM_URL, url)
+					get(SLASH_URL).param(PARAM_URL, url)
 							.param(PARAM_DATE_NAISSANCE, datenaissance.toString("dd-MM-yyyy"))
 							.accept(MediaType.APPLICATION_JSON)).andExpect(status().isOk());
 		} else {
 			mockMvc.perform(
-					post(SLASH_URL).param(PARAM_URL, url)
+					get(SLASH_URL).param(PARAM_URL, url)
 							.param(PARAM_DATE_NAISSANCE, datenaissance.toString("dd-MM-yyyy"))
 							.accept(MediaType.APPLICATION_JSON)).andExpect(status().isForbidden());
 		}

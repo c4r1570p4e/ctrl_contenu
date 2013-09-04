@@ -21,8 +21,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequestMapping(value = "/url", produces = "application/json")
 public class ControlResource {
 
-	@RequestMapping(method = RequestMethod.POST)
-	public void postControlerUrl(Url url, String dateNaissance, HttpServletResponse response) throws IOException {
+	@RequestMapping(method = RequestMethod.GET)
+	public void getControlerUrl(Url url, String dateNaissance, HttpServletResponse response) throws IOException {
 
 		if (url == null || url.getUrl() == null || url.getUrl().trim().isEmpty()) {
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, IConstantesCodeErreur.URL_ABSENTE);
