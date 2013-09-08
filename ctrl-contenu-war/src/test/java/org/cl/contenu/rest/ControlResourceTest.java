@@ -15,6 +15,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -34,6 +35,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -50,9 +52,12 @@ public class ControlResourceTest {
 
 	private static String SLASH_URL = "/url";
 	private static String SLASH_URL_SLASH_MULTI = "/url/multi";
+	private static String SLASH_URL_SLASH_LATENCE = "/url/latence";
 
 	private static String PARAM_URL = "url";
 	private static String PARAM_DATE_NAISSANCE = "dateNaissance";
+	private static String PARAM_MIN = "min";
+	private static String PARAM_MAX = "max";
 
 	@Autowired
 	private WebApplicationContext ctx;
@@ -60,6 +65,9 @@ public class ControlResourceTest {
 	private MockMvc mockMvc;
 
 	private ObjectMapper objectMapper = new ObjectMapper();
+
+	@Autowired
+	private LatenceBean latenceBean;
 
 	@Before
 	public void setUp() {
@@ -237,6 +245,23 @@ public class ControlResourceTest {
 
 		urls = Lists.newArrayList(URL_13_ANS, URL_15_ANS, URL_39_ANS, URL_17_ANS, URL_9_ANS);
 		doTest4Multi(19, urls);
+
+	}
+
+	@Test
+	@DirtiesContext
+	public void doitModifierLatence() throws Exception {
+
+		assertThat(latenceBean.getMin()).isEqualTo(0);
+		assertThat(latenceBean.getMax()).isEqualTo(0);
+
+		mockMvc.perform(
+				post(SLASH_URL_SLASH_LATENCE).param(PARAM_MIN, "5").param(PARAM_MAX, "12")
+						.accept(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
+				.andExpect(content().string(equalTo("true")));
+
+		assertThat(latenceBean.getMin()).isEqualTo(5);
+		assertThat(latenceBean.getMax()).isEqualTo(12);
 
 	}
 

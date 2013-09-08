@@ -11,6 +11,7 @@ import org.cl.contenu.domain.UrlsRequest;
 import org.joda.time.DateTime;
 import org.joda.time.Years;
 import org.joda.time.format.DateTimeFormat;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 @RequestMapping(value = "/url", produces = "application/json")
 public class ControlResource {
+
+	@Autowired
+	private LatenceBean latenceBean;
 
 	@RequestMapping(method = RequestMethod.GET)
 	public void getControlerUrl(Url url, String dateNaissance, HttpServletResponse response) throws IOException {
@@ -37,6 +41,8 @@ public class ControlResource {
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, IConstantesCodeErreur.ERREUR_FORMAT_DATE_NAISSANCE);
 			return;
 		}
+
+		latenceBean.doLatence();
 
 		if (isUrlBloquee(url, dDateNaissance)) {
 			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -70,6 +76,8 @@ public class ControlResource {
 			}
 		}
 
+		latenceBean.doLatence();
+
 		return urls;
 
 	}
@@ -102,4 +110,15 @@ public class ControlResource {
 		Years years = Years.yearsBetween(dateNaissance, DateTime.now());
 		return years.getYears();
 	}
+
+	@RequestMapping(value = "/latence", method = RequestMethod.POST, produces = "application/json")
+	@ResponseBody
+	public Boolean postModifierLatence(int min, int max) {
+
+		latenceBean.changeLatence(min, max);
+		
+		return true;
+
+	}
+
 }
